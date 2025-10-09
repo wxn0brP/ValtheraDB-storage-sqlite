@@ -1,0 +1,73 @@
+# @wxn0brp/db-storage-sqlite
+
+A **pure SQLite storage adapter** for the ValtheraDB database library.
+This package allows you to use SQLite as a backend while leveraging the **full power of ValtheraDB** (CRUD operations, relations, queries, `_id` generation, sorting, pagination, etc.).
+
+> ⚠️ **Note:** Unlike the original ValtheraDB, SQLite requires tables to exist before inserting data. This adapter provides `ensureCollection` to check for table existence, but it **does not create empty tables automatically**.
+
+## Features
+
+* **Full CRUD** – Create, Read, Update, Delete operations fully supported.
+* **Collection-based** – Each collection corresponds to a SQLite table.
+* **Flexible Search** – Supports function-based or object-based searches.
+* **Automatic ID Generation** – `_id` is generated automatically if missing.
+* **Sorting & Pagination** – Built-in support for sorting, limiting, and offsetting results.
+* **TypeScript Support** – Fully typed for safety and autocompletion.
+
+## Installation
+
+```bash
+yarn add github:wxn0brP/ValtheraDB-storage-sqlite#dist
+```
+
+## Usage
+
+```ts
+import { SQLiteValthera } from "@wxn0brp/db-storage-sqlite";
+import { ValtheraClass } from "@wxn0brp/db-core";
+import Database from "better-sqlite3";
+
+// 1. Initialize SQLite database connection
+const sqliteDB = new Database("path/to/database.sqlite");
+
+// 2. Create the SQLiteValthera instance
+const sqliteDbAction = new SQLiteValthera(sqliteDB);
+
+// 3. Ensure the collection/table exists
+await sqliteDbAction.ensureCollection("users");
+
+// 4. Create ValtheraClass instance using the SQLite adapter
+const db = new ValtheraClass({
+    dbAction: sqliteDbAction
+});
+
+// 5. Add a new entry (_id generated automatically, _id is type `TEXT`)
+await db.add("users", { name: "John Doe", email: "john@example.com" });
+
+// 6. Find entries
+const users = await db.find("users", { name: "John Doe" });
+
+// 7. Update entries
+await db.update("users", { name: "John Doe" }, { email: "newemail@example.com" });
+
+// 8. Remove entries
+await db.remove("users", { name: "John Doe" });
+```
+
+## API Notes
+
+* **`ensureCollection(collection: string)`**
+  Checks if the collection (table) exists.
+  Throws an error if the table does not exist.
+
+  > This is necessary because SQLite cannot create a table without defining at least one column.
+
+* All other methods (`add`, `find`, `update`, `remove`) are **fully compatible with ValtheraDB**, preserving all features like `_id` generation, complex filters (`hasFieldsAdvanced`), sorting, pagination, and function-based search.
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions and bug requests are welcome!
