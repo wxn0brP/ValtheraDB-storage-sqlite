@@ -4,9 +4,8 @@ import { VContext } from "@wxn0brp/db-core/types/types";
 import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 
 export async function remove(collection: string, one: boolean, search: Search, context: VContext = {}): Promise<boolean> {
-    const allEntries: Data[] = await Promise.resolve(
-        this.db.prepare(`SELECT * FROM "${collection}"`).all()
-    );
+    let stmt = await this._prepare(`SELECT * FROM "${collection}"`);
+    const allEntries: Data[] = await Promise.resolve(stmt.all());
 
     const toDelete: Data[] = [];
     let removed = false;
@@ -25,7 +24,7 @@ export async function remove(collection: string, one: boolean, search: Search, c
 
     if (!removed) return false;
 
-    const stmt = this.db.prepare(`DELETE FROM "${collection}" WHERE _id = ?`);
+    stmt = await this._prepare(`DELETE FROM "${collection}" WHERE _id = ?`);
     for (const entry of toDelete) {
         await Promise.resolve(stmt.run(entry._id));
     }

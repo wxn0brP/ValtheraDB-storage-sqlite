@@ -10,7 +10,8 @@ export async function find(config: VQuery): Promise<Data[]> {
     let sqlResult = [];
 
     if (typeof search === "function" || Object.keys(search).length === 0) {
-        sqlResult = await Promise.resolve(this.db.prepare(`SELECT * FROM ${collection}`).all());
+        const stmt = await this._prepare(`SELECT * FROM ${collection}`);
+        sqlResult = await Promise.resolve(stmt.all());
     } else {
         const baseKeys = Object.keys(search)
             .filter(k => search[k] !== undefined)
@@ -19,7 +20,8 @@ export async function find(config: VQuery): Promise<Data[]> {
 
         const baseSql = `SELECT * FROM ${collection} WHERE ${baseKeys.map(k => `${k} = ?`).join(" AND ")}`;
         const baseValues = baseKeys.map(k => search[k]);
-        sqlResult = await Promise.resolve(this.db.prepare(baseSql).all(...baseValues));
+        const stmt = await this._prepare(baseSql);
+        sqlResult = await Promise.resolve(stmt.all(...baseValues));
     }
 
     let result = sqlResult.filter(entry =>

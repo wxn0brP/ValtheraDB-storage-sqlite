@@ -3,17 +3,29 @@ import ActionsBase from "@wxn0brp/db-core/base/actions";
 import Data from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
 import type { Database as BetterSqliteDB } from "better-sqlite3";
+import type { Database as BunSqliteDB } from "bun:sqlite";
 import type { DatabaseSync as NodeSqliteDB } from "node:sqlite";
 import { find } from "./find";
 import { remove } from "./remove";
 import { update } from "./update";
 
-export type SupportedDB = BetterSqliteDB | NodeSqliteDB;
+export type SupportedDB = BetterSqliteDB | NodeSqliteDB | BunSqliteDB;
 
 export class SQLiteValthera extends ActionsBase {
     _inited = true;
     constructor(public db: SupportedDB) {
         super();
+    }
+
+    async _prepare(sql: string) {
+        const db = this.db as any;
+        if (typeof db.prepare !== "undefined") return await db.prepare(sql);
+        if (typeof db.prepareSync !== "undefined") return await db.prepareSync(sql);
+        if (typeof db.query === "function") {
+            const q = await db.query(sql);
+            if (q && (q.all || q.get || q.run)) return q;
+        }
+        throw new Error("Unsupported database");
     }
 
     async add(config: VQuery): Promise<Data> {
@@ -26,7 +38,8 @@ export class SQLiteValthera extends ActionsBase {
         const values = keys.map(k => data[k]);
         const sql = `INSERT INTO ${collection} (${keys.join(", ")}) VALUES (${placeholders})`;
 
-        await Promise.resolve(this.db.prepare(sql).run(...values));
+        const stmt = await this._prepare(sql);
+        await Promise.resolve(stmt.run(...values));
         return data;
     }
 
@@ -59,14 +72,16 @@ export class SQLiteValthera extends ActionsBase {
     async removeCollection(config: VQuery): Promise<boolean> {
         const { collection } = config;
         const sql = `DROP TABLE IF EXISTS ${collection}`;
-        await Promise.resolve(this.db.prepare(sql).run());
+        const stmt = await this._prepare(sql);
+        await Promise.resolve(stmt.run());
         return true;
     }
 
     async issetCollection(config: VQuery): Promise<boolean> {
         const { collection } = config;
         const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
-        const result = await Promise.resolve(this.db.prepare(sql).all(collection));
+        const stmt = await this._prepare(sql);
+        const result = await Promise.resolve(stmt.all(collection));
         return result.length > 0;
     }
 
