@@ -2,11 +2,18 @@ import { Search, Updater } from "@wxn0brp/db-core/types/arg";
 import Data from "@wxn0brp/db-core/types/data";
 import { VContext } from "@wxn0brp/db-core/types/types";
 import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+import { SQLiteValthera } from ".";
 
-export async function update(collection: string, one: boolean, search: Search, updater: Updater, context: VContext = {}): Promise<boolean> {
-    const allEntries: Data[] = await Promise.resolve(
-        this.db.prepare(`SELECT * FROM "${collection}"`).all()
-    );
+export async function update(
+    slv: SQLiteValthera,
+    collection: string,
+    one: boolean,
+    search: Search,
+    updater: Updater,
+    context: VContext = {}
+): Promise<boolean> {
+    const stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
+    const allEntries: Data[] = await Promise.resolve(stmt.all());
 
     const matched: Data[] = [];
     for (const entry of allEntries) {
@@ -33,8 +40,8 @@ export async function update(collection: string, one: boolean, search: Search, u
         const keys = Object.keys(newData).filter(k => k !== "_id");
         const values = keys.map(k => newData[k]);
         const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE _id = ?`;
-
-        await Promise.resolve(this.db.prepare(sql).run(...values, target._id));
+        const stmt = await slv._prepare(sql);
+        await Promise.resolve(stmt.run(...values, target._id));
     };
 
     for (const target of matched)

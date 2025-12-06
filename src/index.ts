@@ -2,14 +2,11 @@ import { genId } from "@wxn0brp/db-core";
 import ActionsBase from "@wxn0brp/db-core/base/actions";
 import Data from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
-import type { Database as BetterSqliteDB } from "better-sqlite3";
-import type { Database as BunSqliteDB } from "bun:sqlite";
-import type { DatabaseSync as NodeSqliteDB } from "node:sqlite";
+import { Statement } from "bun:sqlite";
 import { find } from "./find";
 import { remove } from "./remove";
+import { SupportedDB } from "./types";
 import { update } from "./update";
-
-export type SupportedDB = BetterSqliteDB | NodeSqliteDB | BunSqliteDB;
 
 export class SQLiteValthera extends ActionsBase {
     _inited = true;
@@ -17,7 +14,7 @@ export class SQLiteValthera extends ActionsBase {
         super();
     }
 
-    async _prepare(sql: string) {
+    async _prepare(sql: string): Promise<Statement> {
         const db = this.db as any;
         if (typeof db.prepare !== "undefined") return await db.prepare(sql);
         if (typeof db.prepareSync !== "undefined") return await db.prepareSync(sql);
@@ -44,7 +41,7 @@ export class SQLiteValthera extends ActionsBase {
     }
 
     find(config: VQuery): Promise<Data[]> {
-        return find.bind(this)(config);
+        return find(this, config);
     }
 
     async findOne(config: VQuery): Promise<Data | null> {
@@ -54,19 +51,19 @@ export class SQLiteValthera extends ActionsBase {
     }
 
     update(config: VQuery): Promise<boolean> {
-        return update.bind(this)(config.collection, false, config.search, config.updater, config.context);
+        return update(this, config.collection, false, config.search, config.updater, config.context);
     }
 
     updateOne(config: VQuery): Promise<boolean> {
-        return update.bind(this)(config.collection, true, config.search, config.updater, config.context);
+        return update(this, config.collection, true, config.search, config.updater, config.context);
     }
 
     remove(config: VQuery): Promise<boolean> {
-        return remove.bind(this)(config.collection, false, config.search, config.context);
+        return remove(this, config.collection, false, config.search, config.context);
     }
 
     removeOne(config: VQuery): Promise<boolean> {
-        return remove.bind(this)(config.collection, true, config.search, config.context);
+        return remove(this, config.collection, true, config.search, config.context);
     }
 
     async removeCollection(config: VQuery): Promise<boolean> {
