@@ -85,7 +85,7 @@ export class SQLiteValthera extends ActionsBase {
     async ensureCollection(config: VQuery): Promise<boolean> {
         const { collection } = config;
 
-        const issetCollection = await this.issetCollection({ collection });
+        const issetCollection = await this.issetCollection(config);
         if (!issetCollection) {
             throw new Error(`Collection "${collection}" not found. Please create it first.`);
         }
@@ -95,8 +95,5 @@ export class SQLiteValthera extends ActionsBase {
 
 export function createSQLiteValthera(sqlDB: SupportedDB) {
     const dbAction = new SQLiteValthera(sqlDB);
-    return {
-        action: dbAction,
-        db: new ValtheraClass({ dbAction })
-    }
+    return new ValtheraClass({ dbAction });
 }

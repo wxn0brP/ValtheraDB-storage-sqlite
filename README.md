@@ -31,14 +31,14 @@ import Database from "better-sqlite3";
 // 1. Initialize SQLite database connection
 const sqliteDB = new Database("path/to/database.sqlite");
 
-// 2. Create the ValtheraDB instance
-const { db, action } = createSQLiteValthera(sqliteDB);
-
-// 3. Create a collection/table
+// 2. Create a collection/table
 sqliteDB.run("CREATE TABLE IF NOT EXISTS users (_id TEXT PRIMARY KEY, name TEXT, email TEXT)");
 
+// 3. Create the ValtheraDB instance
+const db = createSQLiteValthera(sqliteDB);
+
 // 4. Ensure the collection/table exists
-await action.ensureCollection("users");
+await db.ensureCollection("users");
 
 // 5. Add a new entry (_id generated automatically, _id is type `TEXT`)
 await db.add("users", { name: "John Doe", email: "john@example.com" });
