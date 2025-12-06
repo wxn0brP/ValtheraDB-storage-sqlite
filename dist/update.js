@@ -1,0 +1,33 @@
+import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+export async function update(slv, collection, one, search, updater, context = {}) {
+    const stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
+    const allEntries = await Promise.resolve(stmt.all());
+    const matched = [];
+    for (const entry of allEntries) {
+        const match = typeof search === "function"
+            ? search(entry, context)
+            : hasFieldsAdvanced(entry, search);
+        if (match) {
+            matched.push(entry);
+            if (one)
+                break;
+        }
+    }
+    if (matched.length === 0)
+        return false;
+    const updateOne = async (target) => {
+        const newData = typeof updater === "function"
+            ? updater(target, context)
+            : { ...target, ...updater };
+        if (newData._id !== target._id)
+            newData._id = target._id;
+        const keys = Object.keys(newData).filter(k => k !== "_id");
+        const values = keys.map(k => newData[k]);
+        const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE _id = ?`;
+        const stmt = await slv._prepare(sql);
+        await Promise.resolve(stmt.run(...values, target._id));
+    };
+    for (const target of matched)
+        await updateOne(target);
+    return true;
+}
