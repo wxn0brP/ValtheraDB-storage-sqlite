@@ -1,7 +1,7 @@
 import Data from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
+import { compareSafe } from "@wxn0brp/db-core/utils/compare";
 import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
-import { compareSafe } from "@wxn0brp/db-core/utils/sort";
 import updateFindObject from "@wxn0brp/db-core/utils/updateFindObject";
 
 export async function find(config: VQuery): Promise<Data[]> {
@@ -28,7 +28,7 @@ export async function find(config: VQuery): Promise<Data[]> {
         typeof search === "function" ? search(entry, context) : hasFieldsAdvanced(entry, search)
     );
 
-    const { reverse = false, max = -1, offset = 0, sortBy, sortAsc = true } = dbFindOpts;
+    const { reverse = false, limit = -1, offset = 0, sortBy, sortAsc = true } = dbFindOpts;
 
     if (reverse) result.reverse();
 
@@ -36,11 +36,11 @@ export async function find(config: VQuery): Promise<Data[]> {
         const dir = sortAsc ? 1 : -1;
         result.sort((a, b) => compareSafe(a[sortBy], b[sortBy]) * dir);
         const start = offset;
-        const end = max !== -1 ? offset + max : undefined;
+        const end = limit !== -1 ? offset + limit : undefined;
         result = result.slice(start, end);
     } else {
         if (offset > 0) result.splice(0, offset);
-        if (max > 0) result.splice(max);
+        if (limit > 0) result.splice(limit);
     }
 
     return result.length ? result.map(res => updateFindObject(res, findOpts)) : [];

@@ -17,16 +17,16 @@
     },
     "devDependencies": {
         "@types/better-sqlite3": "^7.6.13",
-        "@types/bun": "^1.2.23",
+        "@types/bun": "*",
         "@types/node": "*",
-        "@wxn0brp/db-core": "^0.2.3",
-        "better-sqlite3": "^12.4.1",
+        "@wxn0brp/db-core": "^0.3.0",
+        "better-sqlite3": "^12.5.0",
         "tsc-alias": "*",
         "typescript": "*"
     },
     "peerDependencies": {
-        "@wxn0brp/db-core": ">=0.2.3",
-        "better-sqlite3": "^12.4.1"
+        "@wxn0brp/db-core": ">=0.3.0",
+        "better-sqlite3": "^12.5.0"
     },
     "peerDependenciesMeta": {
         "@wxn0brp/db-core": {

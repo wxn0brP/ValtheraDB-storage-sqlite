@@ -48,7 +48,7 @@ export class SQLiteValthera extends ActionsBase {
     }
 
     async findOne(config: VQuery): Promise<Data | null> {
-        config.dbFindOpts = { max: 1 };
+        config.dbFindOpts = { limit: 1 };
         const result = await this.find(config);
         return result.length ? result[0] : null;
     }
