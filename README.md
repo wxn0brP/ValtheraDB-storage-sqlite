@@ -17,29 +17,28 @@ This package allows you to use SQLite as a backend while leveraging the **full p
 ## Installation
 
 ```bash
-yarn add github:wxn0brP/ValtheraDB-storage-sqlite#dist
+npm i @wxn0brp/db-storage-sqlite @wxn0brp/db-core
 ```
 
 ## Usage
 
 ```ts
-import { SQLiteValthera } from "@wxn0brp/db-storage-sqlite";
-import { ValtheraClass } from "@wxn0brp/db-core";
+import { createSQLiteValthera } from "@wxn0brp/db-storage-sqlite";
 import Database from "better-sqlite3";
+// import Database from "bun:sqlite";
+// import Database from "node:sqlite";
 
 // 1. Initialize SQLite database connection
 const sqliteDB = new Database("path/to/database.sqlite");
 
-// 2. Create the SQLiteValthera instance
-const sqliteDbAction = new SQLiteValthera(sqliteDB);
+// 2. Create the ValtheraDB instance
+const { db, action } = createSQLiteValthera(sqliteDB);
 
-// 3. Ensure the collection/table exists
-await sqliteDbAction.ensureCollection("users");
+// 3. Create a collection/table
+sqliteDB.run("CREATE TABLE IF NOT EXISTS users (_id TEXT PRIMARY KEY, name TEXT, email TEXT)");
 
-// 4. Create ValtheraClass instance using the SQLite adapter
-const db = new ValtheraClass({
-    dbAction: sqliteDbAction
-});
+// 4. Ensure the collection/table exists
+await action.ensureCollection("users");
 
 // 5. Add a new entry (_id generated automatically, _id is type `TEXT`)
 await db.add("users", { name: "John Doe", email: "john@example.com" });

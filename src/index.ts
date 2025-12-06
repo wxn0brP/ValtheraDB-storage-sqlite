@@ -1,4 +1,4 @@
-import { genId } from "@wxn0brp/db-core";
+import { genId, ValtheraClass } from "@wxn0brp/db-core";
 import ActionsBase from "@wxn0brp/db-core/base/actions";
 import Data from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
@@ -90,5 +90,13 @@ export class SQLiteValthera extends ActionsBase {
             throw new Error(`Collection "${collection}" not found. Please create it first.`);
         }
         return true;
+    }
+}
+
+export function createSQLiteValthera(sqlDB: SupportedDB) {
+    const dbAction = new SQLiteValthera(sqlDB);
+    return {
+        action: dbAction,
+        db: new ValtheraClass({ dbAction })
     }
 }
