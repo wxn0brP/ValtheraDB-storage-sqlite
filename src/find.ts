@@ -1,8 +1,8 @@
-import Data from "@wxn0brp/db-core/types/data";
+import { Data } from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
 import { compareSafe } from "@wxn0brp/db-core/utils/compare";
-import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
-import updateFindObject from "@wxn0brp/db-core/utils/updateFindObject";
+import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+import { updateFindObject } from "@wxn0brp/db-core/utils/updateFindObject";
 import { SQLiteValthera } from ".";
 
 export async function find(slv: SQLiteValthera, config: VQuery): Promise<Data[]> {

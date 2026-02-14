@@ -1,7 +1,7 @@
 import { Search, Updater } from "@wxn0brp/db-core/types/arg";
-import Data from "@wxn0brp/db-core/types/data";
+import { Data } from "@wxn0brp/db-core/types/data";
 import { VContext } from "@wxn0brp/db-core/types/types";
-import hasFieldsAdvanced from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
 export async function update(
@@ -11,7 +11,7 @@ export async function update(
     search: Search,
     updater: Updater,
     context: VContext = {}
-): Promise<boolean> {
+) {
     const stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
     const allEntries: Data[] = await Promise.resolve(stmt.all());
 
@@ -27,7 +27,7 @@ export async function update(
         }
     }
 
-    if (matched.length === 0) return false;
+    if (matched.length === 0) return [];
 
     const updateOne = async (target: Data) => {
         const newData: any = typeof updater === "function"
@@ -42,10 +42,13 @@ export async function update(
         const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE _id = ?`;
         const stmt = await slv._prepare(sql);
         await Promise.resolve(stmt.run(...values, target._id));
+        return await slv.findOne({ collection, search: { _id: target._id } });
     };
 
-    for (const target of matched)
-        await updateOne(target);
+    const results = [];
 
-    return true;
+    for (const target of matched)
+        results.push(await updateOne(target));
+
+    return results;
 }

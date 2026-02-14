@@ -1,20 +1,20 @@
 import { genId, ValtheraClass } from "@wxn0brp/db-core";
-import ActionsBase from "@wxn0brp/db-core/base/actions";
-import Data from "@wxn0brp/db-core/types/data";
+import { ActionsBase } from "@wxn0brp/db-core/base/actions";
+import { Data } from "@wxn0brp/db-core/types/data";
 import { VQuery } from "@wxn0brp/db-core/types/query";
-import { Statement } from "bun:sqlite";
 import { find } from "./find";
 import { remove } from "./remove";
-import { SupportedDB } from "./types";
+import { SupportedDB, VStatement } from "./types";
 import { update } from "./update";
 
 export class SQLiteValthera extends ActionsBase {
     _inited = true;
+
     constructor(public db: SupportedDB) {
         super();
     }
 
-    async _prepare(sql: string): Promise<Statement> {
+    async _prepare(sql: string): Promise<VStatement> {
         const db = this.db as any;
         if (typeof db.prepare !== "undefined") return await db.prepare(sql);
         if (typeof db.prepareSync !== "undefined") return await db.prepareSync(sql);
@@ -23,6 +23,11 @@ export class SQLiteValthera extends ActionsBase {
             if (q && (q.all || q.get || q.run)) return q;
         }
         throw new Error("Unsupported database");
+    }
+
+    async getCollections(): Promise<string[]> {
+        throw new Error("This method is not supported by SQLite");
+        return [];
     }
 
     async add(config: VQuery): Promise<Data> {
@@ -50,20 +55,22 @@ export class SQLiteValthera extends ActionsBase {
         return result.length ? result[0] : null;
     }
 
-    update(config: VQuery): Promise<boolean> {
+    update(config: VQuery) {
         return update(this, config.collection, false, config.search, config.updater, config.context);
     }
 
-    updateOne(config: VQuery): Promise<boolean> {
-        return update(this, config.collection, true, config.search, config.updater, config.context);
+    async updateOne(config: VQuery) {
+        const res = await update(this, config.collection, true, config.search, config.updater, config.context);
+        return res[0] || null;
     }
 
-    remove(config: VQuery): Promise<boolean> {
+    remove(config: VQuery) {
         return remove(this, config.collection, false, config.search, config.context);
     }
 
-    removeOne(config: VQuery): Promise<boolean> {
-        return remove(this, config.collection, true, config.search, config.context);
+    async removeOne(config: VQuery) {
+        const res = await remove(this, config.collection, true, config.search, config.context);
+        return res[0] || null;
     }
 
     async removeCollection(config: VQuery): Promise<boolean> {
