@@ -1,0 +1,90 @@
+import { genId, ValtheraClass } from "@wxn0brp/db-core";
+import { ActionsBase } from "@wxn0brp/db-core/base/actions";
+import { find } from "./find.js";
+import { remove } from "./remove.js";
+import { update } from "./update.js";
+export class SQLiteValthera extends ActionsBase {
+    db;
+    _inited = true;
+    constructor(db) {
+        super();
+        this.db = db;
+    }
+    async _prepare(sql) {
+        const db = this.db;
+        if (typeof db.prepare !== "undefined")
+            return await db.prepare(sql);
+        if (typeof db.prepareSync !== "undefined")
+            return await db.prepareSync(sql);
+        if (typeof db.query === "function") {
+            const q = await db.query(sql);
+            if (q && (q.all || q.get || q.run))
+                return q;
+        }
+        throw new Error("Unsupported database");
+    }
+    async getCollections() {
+        throw new Error("This method is not supported by SQLite");
+        return [];
+    }
+    async add(config) {
+        const { data, id_gen = true, collection } = config;
+        if (id_gen && !data._id)
+            data._id = genId();
+        const keys = Object.keys(data);
+        const placeholders = keys.map(() => "?").join(", ");
+        const values = keys.map(k => data[k]);
+        const sql = `INSERT INTO ${collection} (${keys.join(", ")}) VALUES (${placeholders})`;
+        const stmt = await this._prepare(sql);
+        await Promise.resolve(stmt.run(...values));
+        return data;
+    }
+    find(config) {
+        return find(this, config);
+    }
+    async findOne(config) {
+        config.dbFindOpts = { limit: 1 };
+        const result = await this.find(config);
+        return result.length ? result[0] : null;
+    }
+    update(config) {
+        return update(this, config.collection, false, config.search, config.updater, config.context);
+    }
+    async updateOne(config) {
+        const res = await update(this, config.collection, true, config.search, config.updater, config.context);
+        return res[0] || null;
+    }
+    remove(config) {
+        return remove(this, config.collection, false, config.search, config.context);
+    }
+    async removeOne(config) {
+        const res = await remove(this, config.collection, true, config.search, config.context);
+        return res[0] || null;
+    }
+    async removeCollection(config) {
+        const { collection } = config;
+        const sql = `DROP TABLE IF EXISTS ${collection}`;
+        const stmt = await this._prepare(sql);
+        await Promise.resolve(stmt.run());
+        return true;
+    }
+    async issetCollection(config) {
+        const { collection } = config;
+        const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
+        const stmt = await this._prepare(sql);
+        const result = await Promise.resolve(stmt.all(collection));
+        return result.length > 0;
+    }
+    async ensureCollection(config) {
+        const { collection } = config;
+        const issetCollection = await this.issetCollection(config);
+        if (!issetCollection) {
+            throw new Error(`Collection "${collection}" not found. Please create it first.`);
+        }
+        return true;
+    }
+}
+export function createSQLiteValthera(sqlDB) {
+    const dbAction = new SQLiteValthera(sqlDB);
+    return new ValtheraClass({ dbAction });
+}
