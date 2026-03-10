@@ -1,10 +1,11 @@
-import { Search } from "@wxn0brp/db-core/types/arg";
-import { Data } from "@wxn0brp/db-core/types/data";
-import { VContext } from "@wxn0brp/db-core/types/types";
+import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
+import { RemoveQuery } from "@wxn0brp/db-core/types/query";
 import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
-export async function remove(slv: SQLiteValthera, collection: string, one: boolean, search: Search, context: VContext = {}) {
+export async function remove(slv: SQLiteValthera, query: RemoveQuery, one: boolean) {
+    const { collection, search, context } = query;
+
     let stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
     const allEntries: Data[] = await Promise.resolve(stmt.all());
 
@@ -28,5 +29,5 @@ export async function remove(slv: SQLiteValthera, collection: string, one: boole
         await Promise.resolve(stmt.run(entry._id));
     }
 
-    return toDelete;
+    return toDelete as DataInternal[];
 }

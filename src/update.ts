@@ -1,17 +1,15 @@
-import { Search, Updater } from "@wxn0brp/db-core/types/arg";
-import { Data } from "@wxn0brp/db-core/types/data";
-import { VContext } from "@wxn0brp/db-core/types/types";
+import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
+import { UpdateQuery } from "@wxn0brp/db-core/types/query";
 import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
 export async function update(
     slv: SQLiteValthera,
-    collection: string,
+    query: UpdateQuery,
     one: boolean,
-    search: Search,
-    updater: Updater,
-    context: VContext = {}
 ) {
+    const { collection, search, updater, context } = query;
+
     const stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
     const allEntries: Data[] = await Promise.resolve(stmt.all());
 
@@ -50,5 +48,5 @@ export async function update(
     for (const target of matched)
         results.push(await updateOne(target));
 
-    return results;
+    return results as DataInternal[];
 }
