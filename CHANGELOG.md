@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.100.0](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/compare/v0.90.0...v0.100.0) (2026-03-20)
+
+
+### Features
+
+* update ([60a99e9](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/commit/60a99e966ac2689de8768f444f30c13e67476cb0))
+
 ## [0.90.0](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/compare/v0.0.7...v0.90.0) (2026-02-25)
 
 ### [0.0.7](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/compare/v0.0.6...v0.0.7) (2026-02-17)
