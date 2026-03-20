@@ -2,7 +2,6 @@ import { genId, ValtheraClass } from "@wxn0brp/db-core";
 import { ActionsBase } from "@wxn0brp/db-core/base/actions";
 import { Data } from "@wxn0brp/db-core/types/data";
 import * as Query from "@wxn0brp/db-core/types/query";
-import { VQuery } from "@wxn0brp/db-core/types/query";
 import { find } from "./find";
 import { remove } from "./remove";
 import { SupportedDB, VStatement } from "./types";
