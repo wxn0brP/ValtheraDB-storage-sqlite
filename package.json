@@ -28,7 +28,7 @@
         "@wxn0brp/db-core": "~0.10.0",
         "better-sqlite3": "^12.8.0",
         "tsc-alias": "*",
-        "typescript": "*"
+        "typescript": "^6.0.0"
     },
     "peerDependencies": {
         "@wxn0brp/db-core": "~0.10.0",
