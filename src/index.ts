@@ -1,4 +1,4 @@
-import { genId, ValtheraClass } from "@wxn0brp/db-core";
+import { forgeTypedValthera, genId, ValtheraClass } from "@wxn0brp/db-core";
 import { ActionsBase } from "@wxn0brp/db-core/base/actions";
 import { Data } from "@wxn0brp/db-core/types/data";
 import * as Query from "@wxn0brp/db-core/types/query";
@@ -96,7 +96,27 @@ export class SQLiteValthera extends ActionsBase {
     }
 }
 
-export function createSQLiteValthera(sqlDB: SupportedDB) {
+export function createSQLiteValthera<T extends Record<string, Data> = {}>(sqlDB: SupportedDB) {
     const dbAction = new SQLiteValthera(sqlDB);
-    return new ValtheraClass({ dbAction });
+    const db = new ValtheraClass({ dbAction });
+    return forgeTypedValthera<T>(db);
+}
+
+export const DYNAMIC = {
+    sqlite(file: string, opts?: any) {
+        if (typeof Bun !== "undefined") return DYNAMIC.bun(file, opts);
+        return DYNAMIC.node(file, opts);
+    },
+    async bun(file: string, opts?: any) {
+        const { Database } = await import("bun:sqlite");
+        return new SQLiteValthera(new Database(file, opts));
+    },
+    async node(file: string, opts?: any) {
+        const { DatabaseSync } = await import("node:sqlite");
+        return new SQLiteValthera(new DatabaseSync(file, opts));
+    },
+    async better(file: string, opts?: any) {
+        const { default: def } = await import("better-sqlite3");
+        return new SQLiteValthera(new def(file, opts));
+    }
 }

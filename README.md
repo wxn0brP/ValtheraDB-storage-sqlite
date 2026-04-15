@@ -35,22 +35,28 @@ const sqliteDB = new Database("path/to/database.sqlite");
 sqliteDB.run("CREATE TABLE IF NOT EXISTS users (_id TEXT PRIMARY KEY, name TEXT, email TEXT)");
 
 // 3. Create the ValtheraDB instance
-const db = createSQLiteValthera(sqliteDB);
+const db = createSQLiteValthera<{
+  users: {
+    _id: string;
+    name: string;
+    email: string;
+  }
+}>(sqliteDB);
 
 // 4. Ensure the collection/table exists
 await db.ensureCollection("users");
 
 // 5. Add a new entry (_id generated automatically, _id is type `TEXT`)
-await db.add("users", { name: "John Doe", email: "john@example.com" });
+await db.users.add({ name: "John Doe", email: "john@example.com" });
 
 // 6. Find entries
-const users = await db.find("users", { name: "John Doe" });
+const users = await db.users.find({ name: "John Doe" });
 
 // 7. Update entries
-await db.update("users", { name: "John Doe" }, { email: "newemail@example.com" });
+await db.users.update({ name: "John Doe" }, { email: "newemail@example.com" });
 
 // 8. Remove entries
-await db.remove("users", { name: "John Doe" });
+await db.users.remove({ name: "John Doe" });
 ```
 
 ## API Notes
