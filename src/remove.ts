@@ -1,9 +1,9 @@
 import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
-import { RemoveQuery } from "@wxn0brp/db-core/types/query";
+import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
-export async function remove(slv: SQLiteValthera, query: RemoveQuery, one: boolean) {
+export async function remove(slv: SQLiteValthera, query: VQueryT.Remove, one: boolean) {
     const { collection, search, context } = query;
 
     let stmt = await slv._prepare(`SELECT * FROM "${collection}"`);

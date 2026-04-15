@@ -1,11 +1,11 @@
 import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
-import { UpdateQuery } from "@wxn0brp/db-core/types/query";
+import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
 export async function update(
     slv: SQLiteValthera,
-    query: UpdateQuery,
+    query: VQueryT.Update,
     one: boolean,
 ) {
     const { collection, search, updater, context } = query;

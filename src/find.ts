@@ -1,10 +1,10 @@
 import { Data } from "@wxn0brp/db-core/types/data";
-import { FindQuery } from "@wxn0brp/db-core/types/query";
+import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { findUtil } from "@wxn0brp/db-core/utils/action";
 import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
 import { SQLiteValthera } from ".";
 
-export async function find(slv: SQLiteValthera, config: FindQuery): Promise<Data[]> {
+export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<Data[]> {
     const { collection, search, context } = config;
 
     let sqlResult = [];
