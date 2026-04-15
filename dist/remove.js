@@ -1,0 +1,24 @@
+import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+export async function remove(slv, query, one) {
+    const { collection, search, context } = query;
+    let stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
+    const allEntries = await Promise.resolve(stmt.all());
+    const toDelete = [];
+    for (const entry of allEntries) {
+        const match = typeof search === "function"
+            ? search(entry, context)
+            : hasFieldsAdvanced(entry, search);
+        if (match) {
+            toDelete.push(entry);
+            if (one)
+                break;
+        }
+    }
+    if (!toDelete.length)
+        return [];
+    stmt = await slv._prepare(`DELETE FROM "${collection}" WHERE _id = ?`);
+    for (const entry of toDelete) {
+        await Promise.resolve(stmt.run(entry._id));
+    }
+    return toDelete;
+}
