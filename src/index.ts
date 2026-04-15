@@ -1,7 +1,7 @@
 import { forgeTypedValthera, genId, ValtheraClass } from "@wxn0brp/db-core";
 import { ActionsBase } from "@wxn0brp/db-core/base/actions";
 import { Data } from "@wxn0brp/db-core/types/data";
-import * as Query from "@wxn0brp/db-core/types/query";
+import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { find } from "./find";
 import { remove } from "./remove";
 import { SupportedDB, VStatement } from "./types";
@@ -26,11 +26,11 @@ export class SQLiteValthera extends ActionsBase {
     }
 
     async getCollections(): Promise<string[]> {
-        throw new Error("This method is not supported by SQLite");
-        return [];
+        const tables = (await this._prepare("SELECT name FROM sqlite_master WHERE type='table'")).all();
+        return tables.map((t: any) => t.name);
     }
 
-    async add(config: Query.AddQuery): Promise<Data> {
+    async add(config: VQueryT.Add): Promise<Data> {
         const { data, id_gen = true, collection } = config;
 
         if (id_gen && !data._id) data._id = genId();
@@ -45,30 +45,30 @@ export class SQLiteValthera extends ActionsBase {
         return data;
     }
 
-    find(config: Query.FindQuery): Promise<Data[]> {
+    find(config: VQueryT.Find) {
         return find(this, config);
     }
 
-    async findOne(config: Query.FindQuery): Promise<Data | null> {
+    async findOne(config: VQueryT.Find) {
         config.dbFindOpts = { limit: 1 };
         const result = await this.find(config);
         return result.length ? result[0] : null;
     }
 
-    update(config: Query.UpdateQuery) {
+    update(config: VQueryT.Update) {
         return update(this, config, false);
     }
 
-    async updateOne(config: Query.UpdateQuery) {
+    async updateOne(config: VQueryT.Update) {
         const res = await update(this, config, true);
         return res[0] || null;
     }
 
-    remove(config: Query.RemoveQuery) {
+    remove(config: VQueryT.Remove) {
         return remove(this, config, false);
     }
 
-    async removeOne(config: Query.RemoveQuery) {
+    async removeOne(config: VQueryT.Remove) {
         const res = await remove(this, config, true);
         return res[0] || null;
     }

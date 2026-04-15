@@ -7,12 +7,12 @@ This package allows you to use SQLite as a backend while leveraging the **full p
 
 ## Features
 
-* **Full CRUD** – Create, Read, Update, Delete operations fully supported.
-* **Collection-based** – Each collection corresponds to a SQLite table.
-* **Flexible Search** – Supports function-based or object-based searches.
-* **Automatic ID Generation** – `_id` is generated automatically if missing.
-* **Sorting & Pagination** – Built-in support for sorting, limiting, and offsetting results.
-* **TypeScript Support** – Fully typed for safety and autocompletion.
+- **Full CRUD** - Create, Read, Update, Delete operations fully supported.
+- **Collection-based** - Each collection corresponds to a SQLite table.
+- **Flexible Search** - Supports function-based or object-based searches.
+- **Automatic ID Generation** - `_id` is generated automatically if missing.
+- **Sorting & Pagination** - Built-in support for sorting, limiting, and offsetting results.
+- **TypeScript Support** - Fully typed for safety and autocompletion.
 
 ## Installation
 
@@ -61,13 +61,13 @@ await db.users.remove({ name: "John Doe" });
 
 ## API Notes
 
-* **`ensureCollection(collection: string)`**
+- **`ensureCollection(collection: string)`**
   Checks if the collection (table) exists.
   Throws an error if the table does not exist.
 
   > This is necessary because SQLite cannot create a table without defining at least one column.
 
-* All other methods (`add`, `find`, `update`, `remove`) are **fully compatible with ValtheraDB**, preserving all features like `_id` generation, complex filters (`hasFieldsAdvanced`), sorting, pagination, and function-based search.
+- All other methods (`add`, `find`, `update`, `remove`) are **fully compatible with ValtheraDB**, preserving all features like `_id` generation, complex filters (`hasFieldsAdvanced`), sorting, pagination, and function-based search.
 
 ## License
 
