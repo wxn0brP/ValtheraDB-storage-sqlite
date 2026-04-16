@@ -1,46 +1,43 @@
-import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
+import { DataInternal } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
-import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+import { updateObjectAdvanced } from "@wxn0brp/db-core/utils/updateObject";
 import { SQLiteValthera } from ".";
+import { find } from "./find";
 
 export async function update(
     slv: SQLiteValthera,
     query: VQueryT.Update,
     one: boolean,
 ) {
-    const { collection, search, updater, context } = query;
+    const { collection, updater, context } = query;
 
-    const stmt = await slv._prepare(`SELECT * FROM "${collection}"`);
-    const allEntries: Data[] = await Promise.resolve(stmt.all());
-
-    const matched: Data[] = [];
-    for (const entry of allEntries) {
-        const match = typeof search === "function"
-            ? search(entry, context)
-            : hasFieldsAdvanced(entry, search);
-
-        if (match) {
-            matched.push(entry);
-            if (one) break;
+    const matched = await find(slv, {
+        ...query,
+        dbFindOpts: {
+            limit: one ? 1 : undefined
         }
-    }
+    });
 
     if (matched.length === 0) return [];
 
-    const updateOne = async (target: Data) => {
+    const key = slv.primaryKey[collection] || "_id";
+
+    const updateOne = async (target: any) => {
         const newData: any = typeof updater === "function"
             ? updater(target, context)
-            : { ...target, ...updater };
+            : updateObjectAdvanced(target, updater);
 
-        if (newData._id !== target._id)
-            newData._id = target._id;
+        if (newData[key] !== target[key])
+            newData[key] = target[key];
 
-        const keys = Object.keys(newData).filter(k => k !== "_id");
+        const keys = Object.keys(newData).filter(k => k !== key);
         const values = keys.map(k => newData[k]);
-        const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE _id = ?`;
+
+        const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE "${key}" = ?`;
         const stmt = await slv._prepare(sql);
-        await Promise.resolve(stmt.run(...values, target._id));
-        return await slv.findOne({ collection, search: { _id: target._id } });
+
+        await Promise.resolve(stmt.run(...values, target[key]));
+        return newData;
     };
 
     const results = [];

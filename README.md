@@ -41,7 +41,9 @@ const db = createSQLiteValthera<{
     name: string;
     email: string;
   }
-}>(sqliteDB);
+}>(sqliteDB, {
+  users: "_id" // define the primary key (default: "_id")
+});
 
 // 4. Ensure the collection/table exists
 await db.ensureCollection("users");

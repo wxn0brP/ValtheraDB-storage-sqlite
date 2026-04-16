@@ -10,7 +10,7 @@ import { update } from "./update";
 export class SQLiteValthera extends ActionsBase {
     _inited = true;
 
-    constructor(public db: SupportedDB) {
+    constructor(public db: SupportedDB, public primaryKey: Record<string, string> = {}) {
         super();
     }
 
@@ -103,20 +103,20 @@ export function createSQLiteValthera<T extends Record<string, Data> = {}>(sqlDB:
 }
 
 export const DYNAMIC = {
-    sqlite(file: string, opts?: any) {
-        if (typeof Bun !== "undefined") return DYNAMIC.bun(file, opts);
-        return DYNAMIC.node(file, opts);
+    sqlite(file: string, keys: Record<string, string> = {}, opts?: any) {
+        if (typeof Bun !== "undefined") return DYNAMIC.bun(file, keys, opts);
+        return DYNAMIC.node(file, keys, opts);
     },
-    async bun(file: string, opts?: any) {
+    async bun(file: string, keys: Record<string, string> = {}, opts?: any) {
         const { Database } = await import("bun:sqlite");
-        return new SQLiteValthera(new Database(file, opts));
+        return new SQLiteValthera(new Database(file, opts), keys);
     },
-    async node(file: string, opts?: any) {
+    async node(file: string, keys: Record<string, string> = {}, opts?: any) {
         const { DatabaseSync } = await import("node:sqlite");
-        return new SQLiteValthera(new DatabaseSync(file, opts));
+        return new SQLiteValthera(new DatabaseSync(file, opts), keys);
     },
-    async better(file: string, opts?: any) {
+    async better(file: string, keys: Record<string, string> = {}, opts?: any) {
         const { default: def } = await import("better-sqlite3");
-        return new SQLiteValthera(new def(file, opts));
+        return new SQLiteValthera(new def(file, opts), keys);
     }
 }
