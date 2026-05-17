@@ -1,0 +1,57 @@
+{
+  "name": "@wxn0brp/db-storage-sqlite",
+  "version": "0.110.2",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "description": "A pure SQLite storage adapter for the ValtheraDB database library",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wxn0brP/ValtheraDB-storage-sqlite.git"
+  },
+  "homepage": "https://github.com/wxn0brP/ValtheraDB-storage-sqlite",
+  "author": "wxn0brP",
+  "license": "MIT",
+  "type": "module",
+  "keywords": [
+    "valthera",
+    "valtheradb",
+    "vdb-adapter",
+    "sqlite"
+  ],
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/bun": "*",
+    "@types/node": "*",
+    "@wxn0brp/db-core": "^0.11.0-alpha.4",
+    "better-sqlite3": "^12.9.0",
+    "tsc-alias": "^1",
+    "typescript": "^6"
+  },
+  "peerDependencies": {
+    "@wxn0brp/db-core": "^0.11.0-alpha.4",
+    "better-sqlite3": "^12.9.0"
+  },
+  "peerDependenciesMeta": {
+    "@wxn0brp/db-core": {
+      "optional": false
+    },
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    }
+  }
+}
