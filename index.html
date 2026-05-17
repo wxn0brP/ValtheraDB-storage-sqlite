@@ -32,6 +32,9 @@ Throws an error if the table does not exist.</p>
 </blockquote>
 </li>
 <li>
+<p><strong>Boolean values</strong> are automatically mapped to <code>0</code> (false) / <code>1</code> (true) when stored in or queried against SQLite, since SQLite has no native boolean type.</p>
+</li>
+<li>
 <p>All other methods (<code>add</code>, <code>find</code>, <code>update</code>, <code>remove</code>) are <strong>fully compatible with ValtheraDB</strong>, preserving all features like <code>_id</code> generation, complex filters (<code>hasFieldsAdvanced</code>), sorting, pagination, and function-based search.</p>
 </li>
 </ul>
