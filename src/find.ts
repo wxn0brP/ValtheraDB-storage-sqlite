@@ -1,11 +1,11 @@
 import { Data } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { findUtil } from "@wxn0brp/db-core/utils/action";
-import { hasFieldsAdvanced } from "@wxn0brp/db-core/utils/hasFieldsAdvanced";
+import { findObj } from "@wxn0brp/db-core/utils/process";
 import { SQLiteValthera } from ".";
 
 export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<Data[]> {
-    const { collection, search, context } = config;
+    const { collection, search } = config;
 
     let sqlResult = [];
 
@@ -24,17 +24,11 @@ export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<D
         sqlResult = await Promise.resolve(stmt.all(...baseValues));
     }
 
-    let result = sqlResult.filter(entry =>
-        typeof search === "function" ? search(entry, context) : hasFieldsAdvanced(entry, search)
-    );
+    const result = sqlResult.filter(entry => findObj(entry, search));
 
     return findUtil(
         config,
-        {
-            find() {
-                return result;
-            }
-        } as any,
-        [null]
+        result,
+        []
     )
 }

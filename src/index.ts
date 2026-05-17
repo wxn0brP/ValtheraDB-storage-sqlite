@@ -1,5 +1,6 @@
-import { forgeTypedValthera, genId, ValtheraClass } from "@wxn0brp/db-core";
+import { forgeTypedValthera, ValtheraClass } from "@wxn0brp/db-core";
 import { ActionsBase } from "@wxn0brp/db-core/base/actions";
+import { addId } from "@wxn0brp/db-core/helpers/addId";
 import { Data } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { find } from "./find";
@@ -31,9 +32,8 @@ export class SQLiteValthera extends ActionsBase {
     }
 
     async add(config: VQueryT.Add): Promise<Data> {
-        const { data, id_gen = true, collection } = config;
-
-        if (id_gen && !data._id) data._id = genId();
+        const { data, collection } = config;
+        await addId(config, this, true);
 
         const keys = Object.keys(data);
         const placeholders = keys.map(() => "?").join(", ");

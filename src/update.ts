@@ -1,6 +1,6 @@
-import { DataInternal } from "@wxn0brp/db-core/types/data";
+import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
-import { updateObjectAdvanced } from "@wxn0brp/db-core/utils/updateObject";
+import { updateObj } from "@wxn0brp/db-core/utils/process";
 import { SQLiteValthera } from ".";
 import { find } from "./find";
 
@@ -9,7 +9,7 @@ export async function update(
     query: VQueryT.Update,
     one: boolean,
 ) {
-    const { collection, updater, context } = query;
+    const { collection } = query;
 
     const matched = await find(slv, {
         ...query,
@@ -23,9 +23,7 @@ export async function update(
     const key = slv.primaryKey[collection] || "_id";
 
     const updateOne = async (target: any) => {
-        const newData: any = typeof updater === "function"
-            ? updater(target, context)
-            : updateObjectAdvanced(target, updater);
+        const newData = updateObj(query, target) as Data;
 
         if (newData[key] !== target[key])
             newData[key] = target[key];
