@@ -69,6 +69,8 @@ await db.users.remove({ name: "John Doe" });
 
   > This is necessary because SQLite cannot create a table without defining at least one column.
 
+- **Boolean values** are automatically mapped to `0` (false) / `1` (true) when stored in or queried against SQLite, since SQLite has no native boolean type.
+
 - All other methods (`add`, `find`, `update`, `remove`) are **fully compatible with ValtheraDB**, preserving all features like `_id` generation, complex filters (`hasFieldsAdvanced`), sorting, pagination, and function-based search.
 
 ## License

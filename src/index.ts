@@ -8,6 +8,11 @@ import { remove } from "./remove";
 import { SupportedDB, VStatement } from "./types";
 import { update } from "./update";
 
+export function toSqlValue(v: any) {
+    if (typeof v === "boolean") return v ? 1 : 0;
+    return v;
+}
+
 export class SQLiteValthera extends ActionsBase {
     _inited = true;
 
@@ -37,7 +42,7 @@ export class SQLiteValthera extends ActionsBase {
 
         const keys = Object.keys(data);
         const placeholders = keys.map(() => "?").join(", ");
-        const values = keys.map(k => data[k]);
+        const values = keys.map(k => toSqlValue(data[k]));
         const sql = `INSERT INTO ${collection} (${keys.join(", ")}) VALUES (${placeholders})`;
 
         const stmt = await this._prepare(sql);

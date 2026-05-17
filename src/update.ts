@@ -1,7 +1,7 @@
 import { Data, DataInternal } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { updateObj } from "@wxn0brp/db-core/utils/process";
-import { SQLiteValthera } from ".";
+import { SQLiteValthera, toSqlValue } from ".";
 import { find } from "./find";
 
 export async function update(
@@ -29,7 +29,7 @@ export async function update(
             newData[key] = target[key];
 
         const keys = Object.keys(newData).filter(k => k !== key);
-        const values = keys.map(k => newData[k]);
+        const values = keys.map(k => toSqlValue(newData[k]));
 
         const sql = `UPDATE "${collection}" SET ${keys.map(k => `"${k}" = ?`).join(", ")} WHERE "${key}" = ?`;
         const stmt = await slv._prepare(sql);

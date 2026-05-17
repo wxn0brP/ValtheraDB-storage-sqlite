@@ -2,7 +2,7 @@ import { Data } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
 import { findUtil } from "@wxn0brp/db-core/utils/action";
 import { findObj } from "@wxn0brp/db-core/utils/process";
-import { SQLiteValthera } from ".";
+import { SQLiteValthera, toSqlValue } from ".";
 
 export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<Data[]> {
     const { collection, search } = config;
@@ -19,7 +19,7 @@ export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<D
             .filter(k => typeof search[k] !== "object");
 
         const baseSql = `SELECT * FROM ${collection} WHERE ${baseKeys.map(k => `${k} = ?`).join(" AND ")}`;
-        const baseValues = baseKeys.map(k => search[k]);
+        const baseValues = baseKeys.map(k => toSqlValue(search[k]));
         const stmt = await slv._prepare(baseSql);
         sqlResult = await Promise.resolve(stmt.all(...baseValues));
     }
