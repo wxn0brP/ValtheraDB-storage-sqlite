@@ -73,6 +73,12 @@ await db.users.remove({ name: "John Doe" });
 
 - All other methods (`add`, `find`, `update`, `remove`) are **fully compatible with ValtheraDB**, preserving all features like `_id` generation, complex filters (`hasFieldsAdvanced`), sorting, pagination, and function-based search.
 
+## Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `VALTHERA_SQLITE_BATCH_SIZE` | `500` | Maximum number of rows processed per batch in `remove` operations. Reduces to stay under SQLite's variable limit (`SQLITE_MAX_VARIABLE_NUMBER`).
+
 ## License
 
 MIT
