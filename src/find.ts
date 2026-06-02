@@ -9,10 +9,12 @@ export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<D
 
     let sqlResult = [];
 
-    const baseKeys = Object.keys(search)
-        .filter(k => search[k] !== undefined)
-        .filter(k => !k.startsWith("$"))
-        .filter(k => typeof search[k] !== "object");
+    const baseKeys = typeof search === "object" && search !== null && !Array.isArray(search)
+        ? Object.keys(search)
+            .filter(k => search[k] !== undefined)
+            .filter(k => !k.startsWith("$"))
+            .filter(k => typeof search[k] !== "object")
+        : [];
 
     if (typeof search === "function" || baseKeys.length === 0) {
         const stmt = await slv._prepare(`SELECT * FROM ${collection}`);
@@ -24,7 +26,9 @@ export async function find(slv: SQLiteValthera, config: VQueryT.Find): Promise<D
         sqlResult = await Promise.resolve(stmt.all(...baseValues));
     }
 
-    const result = sqlResult.filter(entry => findObj(entry, search));
+    const result = sqlResult
+        .map(entry => findObj(config, entry))
+        .filter(Boolean);
 
     return findUtil(
         config,
