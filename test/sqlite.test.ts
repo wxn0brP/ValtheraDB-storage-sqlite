@@ -78,4 +78,23 @@ describe("SQLiteValthera", () => {
         expect(remaining).toHaveLength(1);
         expect(remaining[0]).toMatchObject({ user_id: "u1", user: "Piotr", age: 37 });
     });
+
+    test("5. applies advanced search operators and find options", async () => {
+        const { db } = setup("CREATE TABLE items (_id TEXT PRIMARY KEY, name TEXT, val INT, hidden INT)");
+        const items = db.c("items");
+
+        await items.add({ name: "A", val: 5, hidden: 1 });
+        await items.add({ name: "B", val: 10, hidden: 2 });
+        await items.add({ name: "C", val: 15, hidden: 3 });
+
+        const found = await db.find<{ name: string; val: number }>({
+            collection: "items",
+            search: { $gt: { val: 7 } },
+            findOpts: { select: ["name", "val"] }
+        });
+
+        expect(found).toHaveLength(2);
+        expect(found[0]).toEqual({ name: "B", val: 10 });
+        expect(found[1]).toEqual({ name: "C", val: 15 });
+    });
 });
