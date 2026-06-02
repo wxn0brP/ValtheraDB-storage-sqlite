@@ -1,10 +1,6 @@
 {
-    cmd: "yarn build && node dist/test.js",
+    cmd: "tsc --noEmit",
     watch: [
         "src"
-    ],
-    restart_cmd: "clear",
-    events: {
-        rs: "clear"
-    }
+    ]
 }
