@@ -20,6 +20,12 @@ export class SQLiteValthera extends ActionsBase {
         super();
     }
 
+    async close() {
+        const close = (this.db as any).close;
+        if (typeof close === "function")
+            await Promise.resolve(close.call(this.db));
+    }
+
     async _prepare(sql: string): Promise<VStatement> {
         const db = this.db as any;
         if (typeof db.prepare !== "undefined") return await db.prepare(sql);

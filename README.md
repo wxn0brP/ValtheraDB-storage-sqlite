@@ -59,6 +59,9 @@ await db.users.update({ name: "John Doe" }, { email: "newemail@example.com" });
 
 // 8. Remove entries
 await db.users.remove({ name: "John Doe" });
+
+// 9. Close the SQLite handle
+await db.close();
 ```
 
 ## API Notes
