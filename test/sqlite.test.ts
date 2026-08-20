@@ -6,7 +6,7 @@ import { SQLiteValthera } from "../src";
 function setup(tableSql: string, primaryKey: Record<string, string> = {}) {
     const sqlDB = new Database(":memory:");
     const sqlActions = new SQLiteValthera(sqlDB, primaryKey);
-    const db = new ValtheraClass({ dbAction: sqlActions });
+    const db = new ValtheraClass({ adapter: sqlActions });
 
     sqlDB.prepare(tableSql).run();
 
