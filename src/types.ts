@@ -6,3 +6,13 @@ import type { DatabaseSync as NodeSqliteDB } from "node:sqlite";
 
 export type SupportedDB = BetterSqliteDB | NodeSqliteDB | BunSqliteDB;
 export type VStatement = BetterSqlite3.Statement | NodeSqlite.StatementSync;
+
+export type Affinity =
+	| "INTEGER"
+	| "TEXT"
+	| "BLOB"
+	| "REAL"
+	| "NUMERIC"
+	| "NONE";
+
+export type AffinityMap = Record<string, Affinity>;

@@ -3,134 +3,256 @@ import { ActionsBase } from "@wxn0brp/db-core/base/actions";
 import { addId } from "@wxn0brp/db-core/helpers/addId";
 import { Data } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
+import { MAX_STMT_CACHE } from "./const";
 import { find } from "./find";
 import { remove } from "./remove";
-import { SupportedDB, VStatement } from "./types";
+import { AffinityMap, SupportedDB, VStatement } from "./types";
+import { execStmt, computeAffinity, qid, toSqlValue } from "./utils";
 import { update } from "./update";
 
-export function toSqlValue(v: any) {
-    if (typeof v === "boolean") return v ? 1 : 0;
-    return v;
-}
-
 export class SQLiteValthera extends ActionsBase {
-    _inited = true;
+	_inited = true;
+	_stmtCache = new Map<string, VStatement>();
+	_stmtCacheKeys: string[] = [];
+	_pendingStmts = new Map<string, Promise<VStatement>>();
+	_tableColumns = new Map<string, Set<string>>();
+	_tableAffinities = new Map<string, AffinityMap>();
 
-    constructor(public db: SupportedDB, public primaryKey: Record<string, string> = {}) {
-        super();
-    }
+	constructor(
+		public db: SupportedDB,
+		public primaryKey: Record<string, string> = {},
+	) {
+		super();
+	}
 
-    async close() {
-        const close = (this.db as any).close;
-        if (typeof close === "function")
-            await Promise.resolve(close.call(this.db));
-    }
+	async _getTableInfo(collection: string): Promise<Record<string, string>> {
+		const stmt = await this._prepare(`PRAGMA table_info(${qid(collection)})`);
+		const rows: any[] = await execStmt(stmt, "all");
+		const info: Record<string, string> = {};
+		for (const r of rows) info[r.name] = r.type || "";
+		return info;
+	}
 
-    async _prepare(sql: string): Promise<VStatement> {
-        const db = this.db as any;
-        if (typeof db.prepare !== "undefined") return await db.prepare(sql);
-        if (typeof db.prepareSync !== "undefined") return await db.prepareSync(sql);
-        if (typeof db.query === "function") {
-            const q = await db.query(sql);
-            if (q && (q.all || q.get || q.run)) return q;
-        }
-        throw new Error("Unsupported database");
-    }
+	async _invalidateTableCache(collection: string): Promise<void> {
+		this._tableColumns.delete(collection);
+		this._tableAffinities.delete(collection);
+	}
 
-    async getCollections(): Promise<string[]> {
-        const tables = (await this._prepare("SELECT name FROM sqlite_master WHERE type='table'")).all();
-        return tables.map((t: any) => t.name);
-    }
+	async _getTableColumns(collection: string): Promise<Set<string>> {
+		const cached = this._tableColumns.get(collection);
+		if (cached) return cached;
 
-    async add(config: VQueryT.Add): Promise<Data> {
-        const { data, collection } = config;
-        await addId(config, this, true);
+		const info = await this._getTableInfo(collection);
+		const cols = new Set(Object.keys(info));
+		this._tableColumns.set(collection, cols);
+		return cols;
+	}
 
-        const keys = Object.keys(data);
-        const placeholders = keys.map(() => "?").join(", ");
-        const values = keys.map(k => toSqlValue(data[k]));
-        const sql = `INSERT INTO ${collection} (${keys.join(", ")}) VALUES (${placeholders})`;
+	async _getColumnAffinities(collection: string): Promise<AffinityMap> {
+		const cached = this._tableAffinities.get(collection);
+		if (cached) return cached;
 
-        const stmt = await this._prepare(sql);
-        await Promise.resolve(stmt.run(...values));
-        return data;
-    }
+		const info = await this._getTableInfo(collection);
+		const affinities: AffinityMap = {};
+		for (const [name, type] of Object.entries(info))
+			affinities[name] = computeAffinity(type);
+		this._tableAffinities.set(collection, affinities);
+		return affinities;
+	}
 
-    find(config: VQueryT.Find) {
-        return find(this, config);
-    }
+	async _ensureColumns(collection: string, keys: string[]): Promise<void> {
+		const existing = await this._getTableColumns(collection);
+		const missing = keys.filter(k => k !== "_id" && !existing.has(k));
+		if (missing.length === 0) return;
 
-    async findOne(config: VQueryT.Find) {
-        config.dbFindOpts = { limit: 1 };
-        const result = await this.find(config);
-        return result.length ? result[0] : null;
-    }
+		for (const col of missing) {
+			const stmt = await this._prepare(
+				`ALTER TABLE ${qid(collection)} ADD COLUMN ${qid(col)}`,
+			);
+			await execStmt(stmt, "run");
+		}
 
-    update(config: VQueryT.Update) {
-        return update(this, config, false);
-    }
+		await this._invalidateTableCache(collection);
+	}
 
-    async updateOne(config: VQueryT.Update) {
-        const res = await update(this, config, true);
-        return res[0] || null;
-    }
+	async close() {
+		this._stmtCache.clear();
+		this._stmtCacheKeys = [];
+		this._pendingStmts.clear();
+		this._tableColumns.clear();
+		this._tableAffinities.clear();
+		const close = (this.db as any).close;
+		if (typeof close === "function") await Promise.resolve(close.call(this.db));
+	}
 
-    remove(config: VQueryT.Remove) {
-        return remove(this, config, false);
-    }
+	async _prepare(sql: string): Promise<VStatement> {
+		const cached = this._stmtCache.get(sql);
+		if (cached) return cached;
 
-    async removeOne(config: VQueryT.Remove) {
-        const res = await remove(this, config, true);
-        return res[0] || null;
-    }
+		const pending = this._pendingStmts.get(sql);
+		if (pending) return pending;
 
-    async removeCollection(collection: string): Promise<boolean> {
-        const sql = `DROP TABLE IF EXISTS ${collection}`;
-        const stmt = await this._prepare(sql);
-        await Promise.resolve(stmt.run());
-        return true;
-    }
+		const promise = this._prepareUncached(sql).finally(() => {
+			this._pendingStmts.delete(sql);
+		});
+		this._pendingStmts.set(sql, promise);
+		return promise;
+	}
 
-    async issetCollection(collection: string): Promise<boolean> {
-        const sql = `SELECT name FROM sqlite_master WHERE type='table' AND name=?`;
-        const stmt = await this._prepare(sql);
-        const result = await Promise.resolve(stmt.all(collection));
-        return result.length > 0;
-    }
+	private async _prepareUncached(sql: string): Promise<VStatement> {
+		const db = this.db as any;
+		let stmt: VStatement;
 
-    async ensureCollection(collection: string): Promise<boolean> {
-        const issetCollection = await this.issetCollection(collection);
-        if (!issetCollection) {
-            throw new Error(`Collection "${collection}" not found. Please create it first.`);
-        }
-        return true;
-    }
+		if (typeof db.prepare !== "undefined") {
+			stmt = await db.prepare(sql);
+		} else if (typeof db.prepareSync !== "undefined") {
+			stmt = await db.prepareSync(sql);
+		} else if (typeof db.query === "function") {
+			const q = await db.query(sql);
+			if (q && (q.all || q.get || q.run)) {
+				stmt = q;
+			} else {
+				throw new Error("Unsupported database");
+			}
+		} else {
+			throw new Error("Unsupported database");
+		}
+
+		this._cacheStmt(sql, stmt);
+		return stmt;
+	}
+
+	_cacheStmt(sql: string, stmt: VStatement) {
+		if (this._stmtCache.size >= MAX_STMT_CACHE) {
+			const oldest = this._stmtCacheKeys.shift();
+			if (oldest) this._stmtCache.delete(oldest);
+		}
+		this._stmtCache.set(sql, stmt);
+		this._stmtCacheKeys.push(sql);
+	}
+
+	async getCollections(): Promise<string[]> {
+		const stmt = await this._prepare(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
+		);
+		const tables = await execStmt(stmt, "all");
+		return tables.map((t: any) => t.name);
+	}
+
+	async add(config: VQueryT.Add): Promise<Data> {
+		const { data, collection } = config;
+		await addId(config, this, true);
+
+		const entries = Object.entries(data).filter(([, v]) => v !== undefined);
+		if (entries.length === 0)
+			throw new Error(`Cannot insert an empty document into "${collection}"`);
+
+		await this._ensureColumns(
+			collection,
+			entries.map(([k]) => k),
+		);
+		const affinities = await this._getColumnAffinities(collection);
+
+		const keys = entries.map(([k]) => k);
+		const placeholders = keys.map(() => "?").join(", ");
+		const values = entries.map(([k, v]) => toSqlValue(v, affinities[k]));
+		const sql = `INSERT INTO ${qid(collection)} (${keys.map(k => qid(k)).join(", ")}) VALUES (${placeholders})`;
+
+		const stmt = await this._prepare(sql);
+		await execStmt(stmt, "run", ...values);
+		return data;
+	}
+
+	find(config: VQueryT.Find) {
+		return find(this, config);
+	}
+
+	async findOne(config: VQueryT.Find) {
+		config.dbFindOpts = {
+			limit: 1,
+		};
+		const result = await this.find(config);
+		return result.length ? result[0] : null;
+	}
+
+	update(config: VQueryT.Update) {
+		return update(this, config, false);
+	}
+
+	async updateOne(config: VQueryT.Update) {
+		const res = await update(this, config, true);
+		return res[0] || null;
+	}
+
+	remove(config: VQueryT.Remove) {
+		return remove(this, config, false);
+	}
+
+	async removeOne(config: VQueryT.Remove) {
+		const res = await remove(this, config, true);
+		return res[0] || null;
+	}
+
+	async removeCollection(collection: string): Promise<boolean> {
+		const sql = `DROP TABLE IF EXISTS ${qid(collection)}`;
+		const stmt = await this._prepare(sql);
+		await execStmt(stmt, "run");
+		await this._invalidateTableCache(collection);
+		return true;
+	}
+
+	async issetCollection(collection: string): Promise<boolean> {
+		const stmt = await this._prepare(
+			"SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+		);
+		const result = await execStmt(stmt, "all", collection);
+		return result.length > 0;
+	}
+
+	async ensureCollection(collection: string): Promise<boolean> {
+		const issetCollection = await this.issetCollection(collection);
+		if (!issetCollection) {
+			throw new Error(
+				`Collection "${collection}" not found. Please create it first.`,
+			);
+		}
+		return true;
+	}
 }
 
-export function createSQLiteValthera<T extends Record<string, Data> = {}>(sqlDB: SupportedDB) {
-    const dbAction = new SQLiteValthera(sqlDB);
-    const db = new ValtheraClass({ dbAction });
-    return forgeTypedValthera<T>(db);
+export function createSQLiteValthera<T extends Record<string, Data> = {}>(
+	sqlDB: SupportedDB,
+) {
+	const adapter = new SQLiteValthera(sqlDB);
+	const db = new ValtheraClass({
+		adapter,
+	});
+	return forgeTypedValthera<T>(db);
 }
 
 export const DYNAMIC = {
-    sqlite(file: string, keys: Record<string, string> = {}, opts?: any) {
-        if (typeof Bun !== "undefined") return DYNAMIC.bun(file, keys, opts);
-        return DYNAMIC.node(file, keys, opts);
-    },
-    async bun(file: string, keys: Record<string, string> = {}, opts: any = undefined) {
-        const { Database } = await import("bun:sqlite");
-        if (typeof opts === "object" && Object.keys(opts).length === 0) opts = undefined;
-        return new SQLiteValthera(new Database(file, opts), keys);
-    },
-    async node(file: string, keys: Record<string, string> = {}, opts?: any) {
-        const { DatabaseSync } = await import("node:sqlite");
-        if (!opts) opts = {};
-        return new SQLiteValthera(new DatabaseSync(file, opts), keys);
-    },
-    async better(file: string, keys: Record<string, string> = {}, opts?: any) {
-        const { default: def } = await import("better-sqlite3");
-        if (!opts) opts = {};
-        return new SQLiteValthera(new def(file, opts), keys);
-    }
-}
+	sqlite(file: string, keys: Record<string, string> = {}, opts?: any) {
+		if (typeof Bun !== "undefined") return DYNAMIC.bun(file, keys, opts);
+		return DYNAMIC.node(file, keys, opts);
+	},
+	async bun(
+		file: string,
+		keys: Record<string, string> = {},
+		opts: any = undefined,
+	) {
+		const { Database } = await import("bun:sqlite");
+		if (typeof opts === "object" && Object.keys(opts).length === 0)
+			opts = undefined;
+		return new SQLiteValthera(new Database(file, opts), keys);
+	},
+	async node(file: string, keys: Record<string, string> = {}, opts?: any) {
+		const { DatabaseSync } = await import("node:sqlite");
+		if (!opts) opts = {};
+		return new SQLiteValthera(new DatabaseSync(file, opts), keys);
+	},
+	async better(file: string, keys: Record<string, string> = {}, opts?: any) {
+		const { default: def } = await import("better-sqlite3");
+		if (!opts) opts = {};
+		return new SQLiteValthera(new def(file, opts), keys);
+	},
+};

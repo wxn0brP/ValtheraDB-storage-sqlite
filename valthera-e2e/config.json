@@ -2,14 +2,6 @@
     "skip": {
         "domains": [
             "collection-management"
-        ],
-        "tests": [
-            "unset-operator",
-            "push-operator",
-            "merge-operator",
-            "deeply-nested-objects",
-            "exists-true",
-            "exists-false"
         ]
     }
 }
