@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.120.0](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/compare/v0.110.5-alpha.0...v0.120.0) (2026-08-23)
+
+
+### Features
+
+* improve adapter & biome format & valthera-e2e ([bfa4655](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/commit/bfa4655d1664be0160688892ee519cf50b05b17c))
+
 ### [0.110.5-alpha.0](https://github.com/wxn0brP/ValtheraDB-storage-sqlite/compare/v0.110.4...v0.110.5-alpha.0) (2026-06-05)
 
 
