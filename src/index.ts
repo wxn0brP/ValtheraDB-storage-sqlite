@@ -7,8 +7,9 @@ import { MAX_STMT_CACHE } from "./const";
 import { find } from "./find";
 import { remove } from "./remove";
 import { AffinityMap, SupportedDB, VStatement } from "./types";
-import { execStmt, computeAffinity, qid, toSqlValue } from "./utils";
 import { update } from "./update";
+import { computeAffinity, execStmt, qid, toSqlValue } from "./utils";
+import { version } from "./version";
 
 export class SQLiteValthera extends ActionsBase {
 	_inited = true;
@@ -17,6 +18,7 @@ export class SQLiteValthera extends ActionsBase {
 	_pendingStmts = new Map<string, Promise<VStatement>>();
 	_tableColumns = new Map<string, Set<string>>();
 	_tableAffinities = new Map<string, AffinityMap>();
+	version = version;
 
 	constructor(
 		public db: SupportedDB,
