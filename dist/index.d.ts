@@ -1,0 +1,44 @@
+import { ValtheraClass } from "@wxn0brp/db-core";
+import { ActionsBase } from "@wxn0brp/db-core/base/actions";
+import { Data } from "@wxn0brp/db-core/types/data";
+import { VQueryT } from "@wxn0brp/db-core/types/query";
+import { AffinityMap, SupportedDB, VStatement } from "./types.js";
+export declare class SQLiteValthera extends ActionsBase {
+    db: SupportedDB;
+    primaryKey: Record<string, string>;
+    _inited: boolean;
+    _stmtCache: Map<string, VStatement>;
+    _stmtCacheKeys: string[];
+    _pendingStmts: Map<string, Promise<VStatement>>;
+    _tableColumns: Map<string, Set<string>>;
+    _tableAffinities: Map<string, AffinityMap>;
+    version: string;
+    constructor(db: SupportedDB, primaryKey?: Record<string, string>);
+    _getTableInfo(collection: string): Promise<Record<string, string>>;
+    _invalidateTableCache(collection: string): Promise<void>;
+    _getTableColumns(collection: string): Promise<Set<string>>;
+    _getColumnAffinities(collection: string): Promise<AffinityMap>;
+    _ensureColumns(collection: string, keys: string[]): Promise<void>;
+    close(): Promise<void>;
+    _prepare(sql: string): Promise<VStatement>;
+    private _prepareUncached;
+    _cacheStmt(sql: string, stmt: VStatement): void;
+    getCollections(): Promise<string[]>;
+    add(config: VQueryT.Add): Promise<Data>;
+    find(config: VQueryT.Find): Promise<Data[]>;
+    findOne(config: VQueryT.Find): Promise<Data>;
+    update(config: VQueryT.Update): Promise<import("@wxn0brp/db-core/types/data").DataInternal[]>;
+    updateOne(config: VQueryT.Update): Promise<import("@wxn0brp/db-core/types/data").DataInternal>;
+    remove(config: VQueryT.Remove): Promise<import("@wxn0brp/db-core/types/data").DataInternal[]>;
+    removeOne(config: VQueryT.Remove): Promise<import("@wxn0brp/db-core/types/data").DataInternal>;
+    removeCollection(collection: string): Promise<boolean>;
+    issetCollection(collection: string): Promise<boolean>;
+    ensureCollection(collection: string): Promise<boolean>;
+}
+export declare function createSQLiteValthera<T extends Record<string, Data> = {}>(sqlDB: SupportedDB): ValtheraClass & { [K in keyof T]: import("@wxn0brp/db-core/helpers/collection").Collection<T[K]>; };
+export declare const DYNAMIC: {
+    sqlite(file: string, keys?: Record<string, string>, opts?: any): Promise<SQLiteValthera>;
+    bun(file: string, keys?: Record<string, string>, opts?: any): Promise<SQLiteValthera>;
+    node(file: string, keys?: Record<string, string>, opts?: any): Promise<SQLiteValthera>;
+    better(file: string, keys?: Record<string, string>, opts?: any): Promise<SQLiteValthera>;
+};
