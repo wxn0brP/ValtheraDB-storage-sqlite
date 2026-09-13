@@ -1,8 +1,9 @@
-import { forgeTypedValthera, ValtheraClass } from "@wxn0brp/db-core";
+import { forgeTypedValthera, Id, ValtheraClass } from "@wxn0brp/db-core";
 import { ActionsBase } from "@wxn0brp/db-core/base/actions";
 import { addId } from "@wxn0brp/db-core/helpers/addId";
 import { Data } from "@wxn0brp/db-core/types/data";
 import { VQueryT } from "@wxn0brp/db-core/types/query";
+import { TransactionHandle } from "@wxn0brp/db-core/types/transaction";
 import { MAX_STMT_CACHE } from "./const";
 import { find } from "./find";
 import { remove } from "./remove";
@@ -219,6 +220,24 @@ export class SQLiteValthera extends ActionsBase {
 			);
 		}
 		return true;
+	}
+
+	async beginTransaction(id: Id): Promise<TransactionHandle> {
+		const stmt = await this._prepare("BEGIN");
+		await execStmt(stmt, "run");
+		return {
+			id,
+		};
+	}
+
+	async commitTransaction(handle: TransactionHandle) {
+		const stmt = await this._prepare("COMMIT");
+		await execStmt(stmt, "run");
+	}
+
+	async rollbackTransaction(handle: TransactionHandle) {
+		const stmt = await this._prepare("ROLLBACK");
+		await execStmt(stmt, "run");
 	}
 }
 
