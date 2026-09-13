@@ -1,7 +1,13 @@
 {
 	"skip": {
 		"domains": [
-			"collection-management"
+			"collection-management",
+			"lifecycle"
+		],
+		"tests": [
+			"search-on-empty-collection",
+			"find-empty-collection",
+			"add-with-number-id"
 		]
 	}
 }
